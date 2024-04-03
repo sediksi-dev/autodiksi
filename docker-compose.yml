@@ -1,36 +1,47 @@
 version: '3'
 services:
   n8n:
-    image: docker.n8n.io/n8nio/n8n
+    image: n8nio/n8n:latest
+    restart: always
     ports:
-      - "${N8N_PORT}:5678"
+      - ${N8N_PORT}:5678
     environment:
-      - N8N_BASIC_AUTH_ACTIVE=true
-      - N8N_BASIC_AUTH_USER=${N8N_BASIC_AUTH_USER}
-      - N8N_BASIC_AUTH_PASSWORD=${N8N_BASIC_AUTH_PASSWORD}
-      - DB_TYPE=postgresdb
-      - DB_POSTGRESDB_HOST=db
-      - DB_POSTGRESDB_PORT=5432
-      - DB_POSTGRESDB_DATABASE=${DB_POSTGRESDB_DATABASE}
-      - DB_POSTGRESDB_USER=${DB_POSTGRESDB_USER}
-      - DB_POSTGRESDB_PASSWORD=${DB_POSTGRESDB_PASSWORD}
-      - NODE_FUNCTION_ALLOW_EXTERNAL=axios,qs
+      - N8N_QUEUE_TYPE=redis
+      - N8N_QUEUE_HOST=redis
+      - N8N_QUEUE_PORT=6379
+      - N8N_QUEUE_NAME=n8n
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+      - N8N_PAYLOAD_SIZE_MAX=32
+      - WEBHOOK_URL=https://n8n.likrea.biz.id/
+      - GENERIC_TIMEZONE=Asia/Jakarta
+      - TZ=Asia/Jakarta
+
+    networks:
+      - apinetwork
     depends_on:
-      - db
-    restart: unless-stopped
-    networks:
-      - apinetwork
-  db:
-    image: postgres:12
+      - mysql
+      - redis
     volumes:
-      - db-data:/var/lib/postgresql/data
+      - n8n_data:/home/node/.n8n
+
+  mysql:
+    image: mysql:latest
+    restart: always
     environment:
-      - POSTGRES_USER=n8n
-      - POSTGRES_PASSWORD=n8n
-      - POSTGRES_DB=n8n
-    restart: unless-stopped
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
     networks:
       - apinetwork
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  redis:
+    image: redis:latest
+    networks:
+      - apinetwork
+
   api:
     build:
       context: ./api
@@ -40,7 +51,6 @@ services:
       - ${PORT}:${PORT}
     environment:
       - PORT=${PORT}
-      - HOSTNAME_URL=${HOSTNAME_URL}
       - SUPABASE_URL=${SUPABASE_URL}
       - SUPABASE_KEY=${SUPABASE_KEY}
       - API_KEY_EMAIL=${API_KEY_EMAIL}
@@ -57,6 +67,7 @@ services:
       - ./api/modules/wp/temp:/api/modules/wp/temp
     networks:
       - apinetwork
+
   dashboard:
     build:
       context: ./dashboard
@@ -74,7 +85,9 @@ services:
       - apinetwork
 
 volumes:
-  db-data:
+  n8n_data:
+    driver: local
+  mysql_data:
     driver: local
 
 networks:
