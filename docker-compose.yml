@@ -1,47 +1,5 @@
 version: '3'
 services:
-  n8n:
-    image: n8nio/n8n:latest
-    restart: always
-    ports:
-      - ${N8N_PORT}:5678
-    environment:
-      - N8N_QUEUE_TYPE=redis
-      - N8N_QUEUE_HOST=redis
-      - N8N_QUEUE_PORT=6379
-      - N8N_QUEUE_NAME=n8n
-      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
-      - N8N_PAYLOAD_SIZE_MAX=32
-      - WEBHOOK_URL=https://n8n.likrea.biz.id/
-      - GENERIC_TIMEZONE=Asia/Jakarta
-      - TZ=Asia/Jakarta
-
-    networks:
-      - apinetwork
-    depends_on:
-      - mysql
-      - redis
-    volumes:
-      - n8n_data:/home/node/.n8n
-
-  mysql:
-    image: mysql:latest
-    restart: always
-    environment:
-      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
-      - MYSQL_DATABASE=${MYSQL_DATABASE}
-      - MYSQL_USER=${MYSQL_USER}
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
-    networks:
-      - apinetwork
-    volumes:
-      - mysql_data:/var/lib/mysql
-
-  redis:
-    image: redis:latest
-    networks:
-      - apinetwork
-
   api:
     build:
       context: ./api
