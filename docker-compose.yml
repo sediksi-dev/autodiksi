@@ -1,0 +1,82 @@
+version: '3'
+services:
+  n8n:
+    image: docker.n8n.io/n8nio/n8n
+    ports:
+      - "${N8N_PORT}:5678"
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=user
+      - N8N_BASIC_AUTH_PASSWORD=password
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=db
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=n8n
+      - DB_POSTGRESDB_USER=n8n
+      - DB_POSTGRESDB_PASSWORD=n8n
+      - NODE_FUNCTION_ALLOW_EXTERNAL=axios,qs
+    depends_on:
+      - db
+    restart: unless-stopped
+    networks:
+      - apinetwork
+  db:
+    image: postgres:12
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=n8n
+      - POSTGRES_PASSWORD=n8n
+      - POSTGRES_DB=n8n
+    restart: unless-stopped
+    networks:
+      - apinetwork
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - ${PORT}:${PORT}
+    environment:
+      - PORT=${PORT}
+      - HOSTNAME_URL=${HOSTNAME_URL}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+      - API_KEY_EMAIL=${API_KEY_EMAIL}
+      - API_KEY_PASSWORD=${API_KEY_PASSWORD}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_ORGANIZATION=${OPENAI_ORGANIZATION}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - BRAVE_SEARCH_API_KEY=${BRAVE_SEARCH_API_KEY}
+      - LANGCHAIN_TRACING_V2=${LANGCHAIN_TRACING_V2}
+      - LANGCHAIN_ENDPOINT=${LANGCHAIN_ENDPOINT}
+      - LANGCHAIN_API_KEY=${LANGCHAIN_API_KEY}
+      - LANGCHAIN_PROJECT=${LANGCHAIN_PROJECT}
+    volumes:
+      - ./api/modules/wp/temp:/api/modules/wp/temp
+    networks:
+      - apinetwork
+  dashboard:
+    build:
+      context: ./dashboard
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - ${STREAMLIT_PORT}:8501
+    environment:
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+      - AGC_API_URL=http://api:${PORT}
+      - AGC_API_USERNAME=${API_KEY_EMAIL}
+      - AGC_API_PASSWORD=${API_KEY_PASSWORD}
+    networks:
+      - apinetwork
+
+volumes:
+  db-data:
+
+
+networks:
+  apinetwork:
+    driver: bridge
