@@ -22,7 +22,7 @@ services:
       - LANGCHAIN_API_KEY=${LANGCHAIN_API_KEY}
       - LANGCHAIN_PROJECT=${LANGCHAIN_PROJECT}
     volumes:
-      - ./api/modules/wp/temp:/api/modules/wp/temp
+      - temp_img:/api/modules/wp/temp
     networks:
       - apinetwork
 
@@ -43,9 +43,7 @@ services:
       - apinetwork
 
 volumes:
-  n8n_data:
-    driver: local
-  mysql_data:
+  temp_img:
     driver: local
 
 networks:
